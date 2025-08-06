@@ -1,0 +1,78 @@
+---
+- name: Hardening de servidor Ubuntu
+  hosts: all
+  become: yes
+  vars:
+    ansible_ssh_user: sysadmin
+    
+  handlers:
+    - name: reiniciar_sistema
+      ansible.builtin.reboot:
+      when: ansible_os_family == "Debian"
+
+    - name: reiniciar_ssh
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+      when: ansible_os_family == "Debian"
+
+  tasks:
+    - name: Actualizar todos los paquetes del sistema
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: dist
+      notify: reiniciar_sistema
+      when: ansible_os_family == "Debian"
+
+    - name: Habilitar y configurar ufw
+      ansible.builtin.ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+        rule: allow
+        port: ssh
+        proto: tcp
+      when: ansible_os_family == "Debian"
+
+    - name: Habilitar y configurar ufw
+      ansible.builtin.ufw:
+        state: enabled
+        policy: deny
+      when: ansible_os_family == "Debian"
+
+    - name: Permitir conexiones SSH entrantes
+      ansible.builtin.ufw:
+        rule: allow
+        port: ssh
+        proto: tcp
+      when: ansible_os_family == "Debian"
+
+    - name: Deshabilitar login de root y autenticación por contraseña
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin no'
+      notify: reiniciar_ssh
+      when: ansible_os_family == "Debian"
+
+    - name: Deshabilitar autenticación por contraseña
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+      notify: reiniciar_ssh
+      when: ansible_os_family == "Debian"
+
+    - name: Instalar fail2ban
+      ansible.builtin.apt:
+        name: fail2ban
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Habilitar y arrancar el servicio de fail2ban
+      ansible.builtin.systemd:
+        name: fail2ban
+        enabled: yes
+        state: started
+      when: ansible_os_family == "Debian"
