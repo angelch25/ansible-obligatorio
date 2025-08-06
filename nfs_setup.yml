@@ -56,7 +56,7 @@
 
     - name: Permitir el servicio NFS en el firewall (ufw para Ubuntu)
       ansible.builtin.command: ufw allow 2049/tcp
-      when: ansible_os_family == "Debian
+      when: ansible_os_family == "Debian"
 
     - name: Crear el directorio compartido en CentOS
       ansible.builtin.file:
@@ -65,7 +65,7 @@
         owner: nobody
         group: nobody
         mode: '0777'
-        when: ansible_os_family == "RedHat"
+      when: ansible_os_family == "RedHat"
 
     - name: Crear el directorio compartido en Ubuntu
       ansible.builtin.file:
@@ -74,4 +74,4 @@
        owner: nobody
        group: nogroup
        mode: '0777'
-       when: ansible_os_family == "Debian"
+      when: ansible_os_family == "Debian"
