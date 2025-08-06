@@ -28,16 +28,6 @@
       ansible.builtin.ufw:
         state: enabled
         policy: deny
-        direction: incoming
-        rule: allow
-        port: ssh
-        proto: tcp
-      when: ansible_os_family == "Debian"
-
-    - name: Habilitar y configurar ufw
-      ansible.builtin.ufw:
-        state: enabled
-        policy: deny
       when: ansible_os_family == "Debian"
 
     - name: Permitir conexiones SSH entrantes
