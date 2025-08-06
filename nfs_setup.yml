@@ -1,0 +1,67 @@
+---
+- name: Configurar servidor NFS para CentOS y Ubuntu
+  hosts: nfs_servers
+  become: yes
+
+  vars:
+    nfs_shared_dir: "/var/nfs_shared"
+    nfs_exports_file: "/etc/exports"
+    nfs_port: 2049
+
+  handlers:
+    - name: recargar_exportaciones_nfs
+      ansible.builtin.command: exportfs -ra
+      listen: "recargar_exportaciones_nfs"
+
+    - name: recargar_firewall_centros
+      ansible.builtin.command: firewall-cmd --reload
+      listen: "recargar_firewall_centros"
+      when: ansible_os_family == "RedHat"
+
+  tasks:
+    - name: Instalar el paquete NFS en CentOS
+      ansible.builtin.yum:
+        name: nfs-utils
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Instalar el paquete NFS en Ubuntu
+      ansible.builtin.apt:
+        name: nfs-kernel-server
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Asegurar que el servicio NFS esté iniciado y habilitado en CentOS
+      ansible.builtin.systemd:
+        name: nfs-server
+        state: started
+        enabled: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Asegurar que el servicio NFS esté iniciado y habilitado en Ubuntu
+      ansible.builtin.systemd:
+        name: nfs-kernel-server
+        state: started
+        enabled: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Permitir el servicio NFS en el firewall (firewalld para CentOS)
+      ansible.posix.firewalld:
+        service: nfs
+        permanent: yes
+        state: enabled
+      when: ansible_os_family == "RedHat"
+      notify: "recargar_firewall_centros"
+
+    - name: Permitir el servicio NFS en el firewall (ufw para Ubuntu)
+      ansible.builtin.command: ufw allow 2049/tcp
+      when: ansible_os_family == "Debian"
+
+    - name: Crear el directorio compartido
+      ansible.builtin.file:
+        path: "{{ nfs_shared_dir }}"
+        state: directory
+        owner: nobody
+        group: nobody
+        mode: '0777'
