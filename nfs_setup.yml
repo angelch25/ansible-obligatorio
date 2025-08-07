@@ -8,16 +8,6 @@
     nfs_exports_file: "/etc/exports"
     nfs_port: 2049
 
-  handlers:
-    - name: recargar_exportaciones_nfs
-      ansible.builtin.command: exportfs -ra
-      listen: "recargar_exportaciones_nfs"
-
-    - name: recargar_firewall_centros
-      ansible.builtin.command: firewall-cmd --reload
-      listen: "recargar_firewall_centros"
-      when: ansible_os_family == "RedHat"
-
   tasks:
     - name: Instalar el paquete NFS en CentOS
       ansible.builtin.yum:
@@ -75,3 +65,14 @@
        group: nogroup
        mode: '0777'
       when: ansible_os_family == "Debian"
+
+  handlers:
+    - name: recargar_exportaciones_nfs
+      ansible.builtin.command: exportfs -ra
+      listen: "recargar_exportaciones_nfs"
+
+    - name: recargar_firewall_centros
+      ansible.builtin.command: firewall-cmd --reload
+      listen: "recargar_firewall_centros"
+      when: ansible_os_family == "RedHat"
+
